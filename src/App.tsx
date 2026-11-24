@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AppRouter, buildRouteObjects } from "./router/AppRouter";
 import { PendingNavigationHandler } from "./router/PendingNavigationHandler";
@@ -19,5 +20,5 @@ const router = createBrowserRouter([{
 }]);
 
 export default function App() {
-  return <RouterProvider router={router} fallbackElement={<LoadingFallback />} />;
+  return <Suspense fallback={<LoadingFallback />}><RouterProvider router={router} /></Suspense>;
 }
