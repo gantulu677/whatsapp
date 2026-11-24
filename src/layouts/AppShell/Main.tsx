@@ -1,0 +1,2 @@
+import type { ReactNode } from "react";
+export function Main({children}:{children:ReactNode}){return <main className="app-main" id="main-content"><div className="page-container">{children}</div></main>;}

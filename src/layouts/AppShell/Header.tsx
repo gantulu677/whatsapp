@@ -1,0 +1,2 @@
+import { Link } from "react-router-dom";
+export function Header(){return <header className="app-header"><Link className="brand" to="/app" aria-label="WhatsApp Home"><span className="brand-mark">W</span><span>WhatsApp</span></Link><span className="header-caption">Application</span></header>;}
