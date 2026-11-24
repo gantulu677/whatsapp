@@ -1,9 +1,11 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AppRouter, buildRouteObjects } from "./router/AppRouter";
-import { RouteErrorBoundary } from "./router/RouteErrorBoundary";
 import { PendingNavigationHandler } from "./router/PendingNavigationHandler";
 import { OverlayHost, OverlayProvider } from "./overlay/OverlayHost";
-import { LoadingPage } from "./system/SystemPages";
+import { getSystemUIComponent } from "./system/systemUIRegistry";
+
+const LoadingFallback = getSystemUIComponent("LoadingPage");
+const GlobalErrorFallback = getSystemUIComponent("GlobalErrorPage");
 
 function ApplicationRoot() {
   return <OverlayProvider><PendingNavigationHandler /><AppRouter /><OverlayHost /></OverlayProvider>;
@@ -12,10 +14,10 @@ function ApplicationRoot() {
 const router = createBrowserRouter([{
   id: "application-root",
   element: <ApplicationRoot />,
-  errorElement: <RouteErrorBoundary />,
+  errorElement: <GlobalErrorFallback />,
   children: buildRouteObjects(),
 }]);
 
 export default function App() {
-  return <RouterProvider router={router} fallbackElement={<LoadingPage />} />;
+  return <RouterProvider router={router} fallbackElement={<LoadingFallback />} />;
 }
