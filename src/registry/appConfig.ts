@@ -6,6 +6,7 @@ export interface AppConfig {
  schemaVersion: string;
  application: { name: string; framework: string; router: string; routerMode: string };
  pageRegistry: PageDefinition[];
+ systemUIRegistry: Array<{id:string;component:string}>;
  routes: RouteDefinition[];
  navigation: { component: string; id: string; visible: boolean; items: Array<{id:string;routeId:string;label:string}> };
  routeBehavior: { standaloneBottomAction: { defaultVisible: boolean; visibilityPerRoute: Record<string,boolean> } };
