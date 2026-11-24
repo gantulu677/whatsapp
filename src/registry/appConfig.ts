@@ -23,6 +23,12 @@ export function validateAppConfig(): void {
   if (!pageIds.has(route.pageId)) throw new Error(`Unknown pageId in route ${route.routeId}`);
   if (!["AppShell","StandalonePages"].includes(route.layoutId)) throw new Error(`Unknown layoutId in route ${route.routeId}`);
  }
+ const systemUIIds = new Set<string>();
+ for (const item of appConfig.systemUIRegistry) {
+  if (!item.id || !item.component) throw new Error("System UI entries require id and component.");
+  if (systemUIIds.has(item.id)) throw new Error(`Duplicate System UI id: ${item.id}`);
+  systemUIIds.add(item.id);
+ }
  for (const item of appConfig.navigation.items) if (!routeIds.has(item.routeId)) throw new Error(`Unknown navigation route: ${item.routeId}`);
  if (new Set(paths).size !== paths.length) throw new Error("Duplicate route paths in App.json.");
  if (!appConfig.routes.some(route=>route.path==="*")) throw new Error('Missing wildcard route "*".');
