@@ -35,5 +35,5 @@ function ToastHost({toasts,onDismiss}:{toasts:Toast[];onDismiss:(id:number)=>voi
 export function OverlayHost(){
  const {state,close,dismissToast}=useOverlay();
  const hasTransient=Boolean(state.modal||state.drawer||state.dialog);
- return <div className="overlay-host" data-overlay-host><ModalHost content={state.modal}/><DrawerHost content={state.drawer}/><DialogHost content={state.dialog}/><ToastHost toasts={state.toasts} onDismiss={dismissToast}/>{hasTransient?<button className="overlay-dismiss" onClick={()=>close("modal")||close("drawer")||close("dialog")}>Tutup overlay</button>:null}</div>;
+ return <div className="overlay-host" data-overlay-host><ModalHost content={state.modal}/><DrawerHost content={state.drawer}/><DialogHost content={state.dialog}/><ToastHost toasts={state.toasts} onDismiss={dismissToast}/>{hasTransient?<button className="overlay-dismiss" onClick={()=>{close("modal");close("drawer");close("dialog");}}>Tutup overlay</button>:null}</div>;
 }
