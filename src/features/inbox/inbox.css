@@ -103,3 +103,24 @@
 .interactive-message-header{margin:0 0 5px!important;font-weight:750!important}
 .interactive-message-footer{margin-top:7px!important;color:#7b8981!important;font-size:.72rem!important}
 .interactive-reply-label{margin:0!important;color:#087f5b!important;font-size:.78rem!important;font-weight:700}
+
+
+.carousel-composer{max-height:min(42vh,420px);overflow-y:auto;padding:2px 3px 8px}
+.carousel-button-mode{display:flex;gap:6px}
+.carousel-button-mode button{padding:6px 10px;border:1px solid #dfe8e2;border-radius:8px;background:#fff;color:#617168;font-size:.74rem;font-weight:650}
+.carousel-button-mode button.active{border-color:#9bcdb0;background:#edf8f1;color:#087f5b}
+.carousel-card-fields{display:flex;min-width:0;flex-direction:column;gap:7px;margin:0;padding:10px;border:1px solid #e1e9e4;border-radius:10px}
+.carousel-card-fields legend{padding:0 5px;color:#52645a;font-size:.76rem;font-weight:750}
+.carousel-card-fields label{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#66756c;font-size:.76rem}
+.carousel-card-fields select{padding:6px 9px;border:1px solid #e0e8e3;border-radius:7px;background:#fff;color:#263b31}
+.carousel-card-fields input,.carousel-card-fields textarea{width:100%;min-width:0;padding:9px 11px;border:1px solid #e0e8e3;border-radius:9px;outline-color:#8cc8a8;background:#f9fbfa;color:#263b31;font:inherit;font-size:.8rem}
+.carousel-card-fields textarea{resize:vertical}
+.remove-carousel-card{align-self:flex-start;border:0;background:transparent;color:#a3442d;font-size:.74rem}
+.carousel-form-note{margin:0;color:#87948b;font-size:.68rem;line-height:1.45}
+.carousel-message{display:flex;max-width:min(100%,620px);gap:9px;margin-top:9px;overflow-x:auto;padding:1px 1px 8px;scroll-snap-type:x mandatory}
+.carousel-message-card{display:flex;flex:0 0 min(72vw,220px);flex-direction:column;gap:7px;overflow:hidden;padding:8px;border:1px solid #dce8e0;border-radius:11px;background:#fff;scroll-snap-align:start}
+.carousel-message-card img,.carousel-message-card video{display:block;width:100%;max-height:180px;aspect-ratio:4/3;border-radius:7px;object-fit:cover}
+.carousel-message-card>p{color:#293d33;font-size:.78rem;line-height:1.45}
+.carousel-message-card .interactive-message-options{margin-top:0}
+.carousel-message-cta{display:block;padding:7px 9px;border:1px solid #d4e9dc;border-radius:7px;background:#f5fbf7;color:#087f5b;font-size:.76rem;text-align:center;text-decoration:none}
+@media(max-width:760px){.carousel-composer{max-height:38vh}.carousel-message-card{flex-basis:min(76vw,210px)}}

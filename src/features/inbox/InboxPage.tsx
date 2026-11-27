@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useInbox } from "./useInbox";
-import type { InboxMessage, InteractiveReplyButtons } from "./types";
+import type { InboxMessage, InteractiveCarouselMessage, InteractiveReplyButtons } from "./types";
 import "./inbox.css";
 
 function formatTime(value: string) {
@@ -30,11 +30,11 @@ function statusLabel(status: string) {
 function MessageBubble({ message }: { message: InboxMessage }) {
   const outgoing = message.direction === "outbound";
   const buttonReply = message.interactive && "button_reply" in message.interactive ? message.interactive.button_reply : null;
-  const outgoingButtons = message.interactive && "action" in message.interactive ? message.interactive : null;
+  const outgoingInteractive = message.interactive && "action" in message.interactive ? message.interactive : null;
   return (
     <article className={["message-row", outgoing ? "outgoing" : "incoming"].join(" ")}>
       <div className="message-bubble">
-        {outgoingButtons?.header?.type === "text" ? <p className="interactive-message-header">{outgoingButtons.header.text}</p> : null}
+        {outgoingInteractive?.type === "button" && outgoingInteractive.header?.type === "text" ? <p className="interactive-message-header">{outgoingInteractive.header.text}</p> : null}
         {buttonReply ? (
           <p className="interactive-reply-label">Balasan tombol: {buttonReply.title ?? message.message_content ?? "Pilihan dipilih"}</p>
         ) : message.message_content ? (
@@ -45,9 +45,7 @@ function MessageBubble({ message }: { message: InboxMessage }) {
         {message.media.map((media) => (
           <div className="message-media" key={media.id}>
             {media.url && media.mime_type?.startsWith("image/") ? (
-              <a href={media.url} target="_blank" rel="noreferrer">
-                <img src={media.url} alt={media.caption ?? media.file_name ?? "Lampiran pesan"} loading="lazy" />
-              </a>
+              <a href={media.url} target="_blank" rel="noreferrer"><img src={media.url} alt={media.caption ?? media.file_name ?? "Lampiran pesan"} loading="lazy" /></a>
             ) : media.url ? (
               <a href={media.url} target="_blank" rel="noreferrer">{media.file_name ?? "Buka lampiran"}</a>
             ) : (
@@ -55,17 +53,31 @@ function MessageBubble({ message }: { message: InboxMessage }) {
             )}
           </div>
         ))}
-        {outgoingButtons ? (
+        {outgoingInteractive?.type === "button" ? (
           <>
-            {Array.isArray(outgoingButtons.action.buttons) ? (
-              <div className="interactive-message-options" aria-label="Pilihan balasan">
-                {outgoingButtons.action.buttons.map((item, index) => (
-                  <span key={item.reply?.id ?? index}>{item.reply?.title ?? "Pilihan"}</span>
-                ))}
-              </div>
-            ) : null}
-            {outgoingButtons.footer?.text ? <p className="interactive-message-footer">{outgoingButtons.footer.text}</p> : null}
+            <div className="interactive-message-options" aria-label="Pilihan balasan">
+              {outgoingInteractive.action.buttons.map((item, index) => <span key={item.reply.id ?? index}>{item.reply.title}</span>)}
+            </div>
+            {outgoingInteractive.footer?.text ? <p className="interactive-message-footer">{outgoingInteractive.footer.text}</p> : null}
           </>
+        ) : null}
+        {outgoingInteractive?.type === "carousel" ? (
+          <div className="carousel-message" aria-label="Kartu carousel">
+            {outgoingInteractive.action.cards.map((card) => {
+              const mediaUrl = card.header.type === "image" ? card.header.image.link : card.header.video.link;
+              return (
+                <article className="carousel-message-card" key={card.card_index}>
+                  {card.header.type === "image"
+                    ? <a href={mediaUrl} target="_blank" rel="noreferrer"><img src={mediaUrl} alt={card.body?.text ?? `Kartu ${card.card_index + 1}`} loading="lazy" /></a>
+                    : <video src={mediaUrl} controls preload="metadata" />}
+                  {card.body?.text ? <p>{card.body.text}</p> : null}
+                  {card.type === "cta_url"
+                    ? <a className="carousel-message-cta" href={card.action.parameters.url} target="_blank" rel="noreferrer">{card.action.parameters.display_text}</a>
+                    : <div className="interactive-message-options">{card.action.buttons.map((item) => <span key={item.quick_reply.id}>{item.quick_reply.title}</span>)}</div>}
+                </article>
+              );
+            })}
+          </div>
         ) : null}
         {message.error?.message ? <p className="message-error">{message.error.message}</p> : null}
         <footer className="message-meta">
@@ -88,7 +100,13 @@ export function InboxPage() {
   } = useInbox();
   const [search, setSearch] = useState("");
   const [draft, setDraft] = useState("");
-  const [composerMode, setComposerMode] = useState<"text" | "buttons">("text");
+  const [composerMode, setComposerMode] = useState<"text" | "buttons" | "carousel">("text");
+  const [carouselBody, setCarouselBody] = useState("");
+  const [carouselButtonMode, setCarouselButtonMode] = useState<"quick_reply" | "cta_url">("quick_reply");
+  const [carouselCards, setCarouselCards] = useState<Array<{ mediaType: "image" | "video"; mediaUrl: string; body: string; buttonTitle: string; buttonUrl: string }>>([
+    { mediaType: "image", mediaUrl: "", body: "", buttonTitle: "", buttonUrl: "" },
+    { mediaType: "image", mediaUrl: "", body: "", buttonTitle: "", buttonUrl: "" },
+  ]);
   const [buttonBody, setButtonBody] = useState("");
   const [buttonHeader, setButtonHeader] = useState("");
   const [buttonFooter, setButtonFooter] = useState("");
@@ -266,13 +284,14 @@ export function InboxPage() {
                 <div className="composer-mode-switch" role="group" aria-label="Jenis pesan">
                   <button type="button" className={composerMode === "text" ? "active" : ""} onClick={() => setComposerMode("text")}>Pesan teks</button>
                   <button type="button" className={composerMode === "buttons" ? "active" : ""} onClick={() => setComposerMode("buttons")}>Tombol balasan</button>
+                  <button type="button" className={composerMode === "carousel" ? "active" : ""} onClick={() => setComposerMode("carousel")}>Media carousel</button>
                 </div>
                 {composerMode === "text" ? (
                   <form className="message-composer" onSubmit={(event) => void handleSubmit(event)}>
                     <textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Ketik pesan…" rows={1} maxLength={4096} aria-label="Tulis pesan WhatsApp" />
                     <button type="submit" disabled={!draft.trim() || sending || !account || !contact}>{sending ? "Mengirim…" : "Kirim"}</button>
                   </form>
-                ) : (
+                ) : composerMode === "buttons" ? (
                   <form className="interactive-composer" onSubmit={async (event) => {
                     event.preventDefault();
                     const titles = buttonTitles.map((title) => title.trim()).filter(Boolean);
@@ -286,11 +305,8 @@ export function InboxPage() {
                     };
                     const sent = await sendInteractiveMessage(interactive);
                     if (sent) {
-                      setButtonBody("");
-                      setButtonHeader("");
-                      setButtonFooter("");
-                      setButtonTitles(["", ""]);
-                      setComposerMode("text");
+                      setButtonBody(""); setButtonHeader(""); setButtonFooter("");
+                      setButtonTitles(["", ""]); setComposerMode("text");
                     }
                   }}>
                     <input value={buttonHeader} onChange={(event) => setButtonHeader(event.target.value)} maxLength={60} placeholder="Header teks (opsional, maks. 60)" aria-label="Header pesan" />
@@ -307,8 +323,66 @@ export function InboxPage() {
                     <input value={buttonFooter} onChange={(event) => setButtonFooter(event.target.value)} maxLength={60} placeholder="Footer (opsional, maks. 60)" aria-label="Footer pesan" />
                     <button className="interactive-send-button" type="submit" disabled={!buttonBody.trim() || !buttonTitles.some((title) => title.trim()) || new Set(buttonTitles.filter((title) => title.trim()).map((title) => title.trim().toLocaleLowerCase())).size !== buttonTitles.filter((title) => title.trim()).length || sending || !account || !contact}>{sending ? "Mengirim…" : "Kirim tombol balasan"}</button>
                   </form>
-                )}
-                <p className="composer-hint">Pesan interaktif mengikuti batas layanan 24 jam yang divalidasi server.</p>
+                ) : (
+                  <form className="interactive-composer carousel-composer" onSubmit={async (event) => {
+                    event.preventDefault();
+                    const mediaType = carouselCards[0]?.mediaType ?? "image";
+                    const validCards = carouselCards.length >= 2 && carouselCards.length <= 10 &&
+                      carouselCards.every((card) => card.mediaType === mediaType && /^https:\/\//i.test(card.mediaUrl.trim()) &&
+                        card.buttonTitle.trim().length > 0 && (carouselButtonMode !== "cta_url" || /^https:\/\//i.test(card.buttonUrl.trim())) &&
+                        (card.body.split("\n").length - 1) <= 2);
+                    if (!carouselBody.trim() || !validCards) return;
+                    const cards: InteractiveCarouselMessage["action"]["cards"] = carouselCards.map((card, index) => {
+                      const header = card.mediaType === "image"
+                        ? { type: "image" as const, image: { link: card.mediaUrl.trim() } }
+                        : { type: "video" as const, video: { link: card.mediaUrl.trim() } };
+                      const cardBody = card.body.trim() ? { text: card.body.trim() } : undefined;
+                      if (carouselButtonMode === "cta_url") return {
+                        card_index: index, type: "cta_url" as const, header,
+                        ...(cardBody ? { body: cardBody } : {}),
+                        action: { name: "cta_url" as const, parameters: { display_text: card.buttonTitle.trim(), url: card.buttonUrl.trim() } },
+                      };
+                      return {
+                        card_index: index, type: "button" as const, header,
+                        ...(cardBody ? { body: cardBody } : {}),
+                        action: { buttons: [{ type: "quick_reply" as const, quick_reply: { id: `carousel_${crypto.randomUUID()}_${index}`, title: card.buttonTitle.trim() } }] },
+                      };
+                    });
+                    const sent = await sendInteractiveMessage({ type: "carousel", body: { text: carouselBody.trim() }, action: { cards } });
+                    if (sent) {
+                      setCarouselBody("");
+                      setCarouselCards([
+                        { mediaType, mediaUrl: "", body: "", buttonTitle: "", buttonUrl: "" },
+                        { mediaType, mediaUrl: "", body: "", buttonTitle: "", buttonUrl: "" },
+                      ]);
+                      setComposerMode("text");
+                    }
+                  }}>
+                    <textarea value={carouselBody} onChange={(event) => setCarouselBody(event.target.value)} maxLength={1024} rows={2} placeholder="Teks utama carousel (wajib, maks. 1.024 karakter)" aria-label="Teks utama carousel" />
+                    <div className="carousel-button-mode" role="group" aria-label="Jenis tombol pada kartu">
+                      <button type="button" className={carouselButtonMode === "quick_reply" ? "active" : ""} onClick={() => setCarouselButtonMode("quick_reply")}>Quick reply</button>
+                      <button type="button" className={carouselButtonMode === "cta_url" ? "active" : ""} onClick={() => setCarouselButtonMode("cta_url")}>Tautan URL</button>
+                    </div>
+                    {carouselCards.map((card, index) => (
+                      <fieldset className="carousel-card-fields" key={index}>
+                        <legend>Kartu {index + 1}</legend>
+                        <label>Media
+                          <select value={card.mediaType} onChange={(event) => setCarouselCards((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, mediaType: event.target.value as "image" | "video" } : item))}>
+                            <option value="image">Gambar</option><option value="video">Video</option>
+                          </select>
+                        </label>
+                        <input type="url" value={card.mediaUrl} onChange={(event) => setCarouselCards((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, mediaUrl: event.target.value } : item))} placeholder="URL HTTPS media publik" aria-label={`URL media kartu ${index + 1}`} />
+                        <textarea value={card.body} onChange={(event) => setCarouselCards((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, body: event.target.value } : item))} maxLength={160} rows={2} placeholder="Teks kartu (opsional, maks. 160 karakter)" aria-label={`Teks kartu ${index + 1}`} />
+                        <input value={card.buttonTitle} onChange={(event) => setCarouselCards((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, buttonTitle: event.target.value } : item))} maxLength={20} placeholder="Label tombol (wajib, maks. 20)" aria-label={`Label tombol kartu ${index + 1}`} />
+                        {carouselButtonMode === "cta_url" ? <input type="url" value={card.buttonUrl} onChange={(event) => setCarouselCards((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, buttonUrl: event.target.value } : item))} placeholder="URL HTTPS tujuan tombol" aria-label={`URL tombol kartu ${index + 1}`} /> : null}
+                        {carouselCards.length > 2 ? <button type="button" className="remove-carousel-card" onClick={() => setCarouselCards((current) => current.filter((_, itemIndex) => itemIndex !== index))}>Hapus kartu</button> : null}
+                      </fieldset>
+                    ))}
+                    {carouselCards.length < 10 ? <button type="button" className="add-reply-button" onClick={() => setCarouselCards((current) => [...current, { mediaType: current[0]?.mediaType ?? "image", mediaUrl: "", body: "", buttonTitle: "", buttonUrl: "" }])}>+ Tambah kartu</button> : null}
+                    <button className="interactive-send-button" type="submit" disabled={!carouselBody.trim() || carouselCards.length < 2 || carouselCards.length > 10 || carouselCards.some((card) => !card.mediaUrl.trim() || !/^https:\/\//i.test(card.mediaUrl.trim()) || !card.buttonTitle.trim() || (carouselButtonMode === "cta_url" && !/^https:\/\//i.test(card.buttonUrl.trim()))) || new Set(carouselCards.map((card) => card.mediaType)).size > 1 || sending || !account || !contact}>{sending ? "Mengirim…" : "Kirim media carousel"}</button>
+                    <p className="carousel-form-note">Gunakan URL HTTPS yang dapat diakses publik. Semua kartu harus memakai tipe media dan tombol yang sama.</p>
+                  </form>
+                )}                <p className="composer-hint">Pesan interaktif mengikuti batas layanan 24 jam yang divalidasi server.</p>
               </div>
             </>
           )}
