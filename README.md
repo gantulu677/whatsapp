@@ -51,6 +51,8 @@ GitHub Actions menjalankan typecheck dan production build pada Pull Request yang
 
 - Daftar percakapan dan detail pesan dibaca melalui Edge Function publik `whatsapp-get-inbox`.
 - Pesan dikirim melalui Edge Function publik `whatsapp-send-message`.
+- Reply Buttons dikirim sebagai pesan interaktif `type: interactive` melalui Edge Function yang sama; pengguna dapat memilih hingga tiga tombol balasan.
+- Balasan tombol masuk diterima melalui `whatsapp-webhook` dan ditampilkan sebagai pesan interaktif pada Inbox.
 - Frontend tidak memanggil Meta Graph API secara langsung.
 - Frontend tidak membaca tabel WhatsApp secara langsung karena RLS tabel hanya mengizinkan role `authenticated`; aplikasi ini tidak menggunakan Supabase Auth.
 - Pembaruan Inbox didengarkan melalui Realtime Broadcast channel `whatsapp-inbox`, event `inbox_update`, yang dikirim oleh webhook dan fungsi pengiriman pesan.
