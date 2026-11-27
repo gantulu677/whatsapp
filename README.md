@@ -69,9 +69,20 @@ Frontend mengikuti kontrak tabel yang sudah ada, tanpa membuat atau mengubah sch
 - `whatsapp_message_statuses`
 - `whatsapp_message_media`
 
+## Deployment — GitHub Pages
+
+Aplikasi dipublikasikan melalui GitHub Pages pada project site:
+
+- URL: `https://gantulu677.github.io/whatsapp/`
+- Vite base path: `/whatsapp/`.
+- React Router menggunakan basename `/whatsapp` agar navigasi client-side bekerja pada project site.
+- Workflow `.github/workflows/deploy-pages.yml` membangun aplikasi dan menerbitkan artifact ke GitHub Pages setiap ada push ke `main`.
+- Workflow menyalin `index.html` menjadi `404.html` agar deep link React Router tetap dapat dimuat saat halaman dibuka langsung atau di-refresh.
+- Pull Request hanya menjalankan validasi; deployment berjalan setelah perubahan di-merge ke `main`.
+
 ## Repository Workflow
 
-Source implementation berada pada branch `feature/bootstrap-vite-react-typescript`. Perubahan diajukan melalui Pull Request ke `main`. Merge dan deployment tetap melalui persetujuan terpisah.
+Perubahan diajukan melalui Pull Request ke `main`. Merge memicu workflow deployment GitHub Pages secara otomatis.
 
 ## Scope Notes
 
