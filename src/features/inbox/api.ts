@@ -35,6 +35,7 @@ async function functionRequest<T>(functionName: string, query: URLSearchParams, 
 
   const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
   if (!response.ok) {
+    if (payload?.delivery_unknown === true) return payload as T;
     const nestedError = payload?.error;
     const message = typeof nestedError === "string"
       ? nestedError
@@ -81,10 +82,30 @@ export async function sendWhatsappMessage(payload: SendMessagePayload) {
 
   if (result.delivery_unknown) {
     throw new InboxApiError(
-      result.persistence_warning ?? "Status pengiriman belum dapat dipastikan. Jangan kirim ulang dengan ID permintaan baru.",
-      false,
+      result.error ?? result.persistence_warning ?? "Status pengiriman belum dapat dipastikan. Gunakan retry dengan ID permintaan yang sama.",
+      true,
       "DELIVERY_UNKNOWN",
     );
   }
+
+  if (!result.success) {
+    const savedStatus = result.saved_message?.status;
+    if (result.idempotent_replay && savedStatus === "pending") {
+      throw new InboxApiError(
+        "Permintaan sebelumnya masih diproses. Tidak ada pesan baru yang dikirim; tunggu pembaruan status melalui Inbox.",
+        false,
+        "IDEMPOTENT_PENDING",
+      );
+    }
+    if (result.idempotent_replay && savedStatus === "failed") {
+      throw new InboxApiError(
+        "Permintaan sebelumnya berstatus gagal. Permintaan yang sama tidak akan dikirim ulang otomatis.",
+        false,
+        "IDEMPOTENT_FAILED",
+      );
+    }
+    throw new InboxApiError(result.error ?? "WhatsApp tidak menerima pesan ini.", false, "SEND_REJECTED");
+  }
+
   return result;
 }
