@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useInbox } from "./useInbox";
 import type { InboxMessage, InteractiveReplyButtons } from "./types";
 import "./inbox.css";
@@ -29,10 +29,19 @@ function statusLabel(status: string) {
 
 function MessageBubble({ message }: { message: InboxMessage }) {
   const outgoing = message.direction === "outbound";
+  const buttonReply = message.interactive && "button_reply" in message.interactive ? message.interactive.button_reply : null;
+  const outgoingButtons = message.interactive && "action" in message.interactive ? message.interactive : null;
   return (
     <article className={["message-row", outgoing ? "outgoing" : "incoming"].join(" ")}>
       <div className="message-bubble">
-        {message.message_content ? <p>{message.message_content}</p> : <p className="message-kind">{messagePreview(message)}</p>}
+        {outgoingButtons?.header?.type === "text" ? <p className="interactive-message-header">{outgoingButtons.header.text}</p> : null}
+        {buttonReply ? (
+          <p className="interactive-reply-label">Balasan tombol: {buttonReply.title ?? message.message_content ?? "Pilihan dipilih"}</p>
+        ) : message.message_content ? (
+          <p>{message.message_content}</p>
+        ) : (
+          <p className="message-kind">{messagePreview(message)}</p>
+        )}
         {message.media.map((media) => (
           <div className="message-media" key={media.id}>
             {media.url && media.mime_type?.startsWith("image/") ? (
@@ -46,15 +55,17 @@ function MessageBubble({ message }: { message: InboxMessage }) {
             )}
           </div>
         ))}
-        {message.interactive && "action" in message.interactive && Array.isArray(message.interactive.action.buttons) ? (
-          <div className="interactive-message-options" aria-label="Pilihan balasan">
-            {message.interactive.action.buttons.map((item, index) => (
-              <span key={item.reply?.id ?? index}>{item.reply?.title ?? "Pilihan"}</span>
-            ))}
-          </div>
-        ) : null}
-        {message.interactive && "button_reply" in message.interactive ? (
-          <p className="interactive-reply-label">Balasan tombol: {message.interactive.button_reply.title ?? message.message_content}</p>
+        {outgoingButtons ? (
+          <>
+            {Array.isArray(outgoingButtons.action.buttons) ? (
+              <div className="interactive-message-options" aria-label="Pilihan balasan">
+                {outgoingButtons.action.buttons.map((item, index) => (
+                  <span key={item.reply?.id ?? index}>{item.reply?.title ?? "Pilihan"}</span>
+                ))}
+              </div>
+            ) : null}
+            {outgoingButtons.footer?.text ? <p className="interactive-message-footer">{outgoingButtons.footer.text}</p> : null}
+          </>
         ) : null}
         {message.error?.message ? <p className="message-error">{message.error.message}</p> : null}
         <footer className="message-meta">
@@ -69,7 +80,10 @@ function MessageBubble({ message }: { message: InboxMessage }) {
 export function InboxPage() {
   const {
     account, conversations, selectedContactId, selectedContact, messages, listLoading,
-    detailLoading, sending, error, sendError, retryPayload, realtimeStatus, refreshList,
+    detailLoading, detailMoreLoading, listMoreLoading, listPagination, detailPagination,
+    searchResults, searchLoading, searchError, searchRevision, sendWarning,
+    sending, error, sendError, retryPayload, realtimeStatus, refreshList, loadMoreConversations,
+    loadOlderMessages, loadAllConversations, cancelConversationSearch,
     selectConversation, sendMessage, sendInteractiveMessage, retryMessage,
   } = useInbox();
   const [search, setSearch] = useState("");
@@ -79,17 +93,48 @@ export function InboxPage() {
   const [buttonHeader, setButtonHeader] = useState("");
   const [buttonFooter, setButtonFooter] = useState("");
   const [buttonTitles, setButtonTitles] = useState(["", ""]);
+  const messageListRef = useRef<HTMLDivElement | null>(null);
+  const pendingScrollRestoreRef = useRef<{ height: number; top: number } | null>(null);
+
+  useEffect(() => {
+    const normalized = search.trim();
+    if (!normalized) {
+      cancelConversationSearch();
+      return;
+    }
+    const timeout = window.setTimeout(() => void loadAllConversations(), 250);
+    return () => {
+      window.clearTimeout(timeout);
+      cancelConversationSearch();
+    };
+  }, [search, searchRevision, loadAllConversations, cancelConversationSearch]);
+
+  useLayoutEffect(() => {
+    const pending = pendingScrollRestoreRef.current;
+    const element = messageListRef.current;
+    if (!pending || !element) return;
+    element.scrollTop = pending.top + (element.scrollHeight - pending.height);
+    pendingScrollRestoreRef.current = null;
+  }, [messages]);
+
+  async function handleLoadOlderMessages() {
+    const element = messageListRef.current;
+    if (element) pendingScrollRestoreRef.current = { height: element.scrollHeight, top: element.scrollTop };
+    const loaded = await loadOlderMessages();
+    if (!loaded) pendingScrollRestoreRef.current = null;
+  }
 
   const filteredConversations = useMemo(() => {
     const normalized = search.trim().toLowerCase();
-    if (!normalized) return conversations;
-    return conversations.filter(({ contact, last_message }) =>
+    const source = normalized ? searchResults : conversations;
+    if (!normalized) return source;
+    return source.filter(({ contact, last_message }) =>
       [contact.profile_name ?? "", contact.wa_id, last_message.message_content ?? ""]
         .some((value) => value.toLowerCase().includes(normalized)),
     );
-  }, [conversations, search]);
+  }, [conversations, search, searchResults]);
 
-  const activeConversation = conversations.find((item) => item.contact.id === selectedContactId);
+  const activeConversation = [...conversations, ...searchResults].find((item) => item.contact.id === selectedContactId);
   const contact = selectedContact ?? activeConversation?.contact ?? null;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -132,11 +177,13 @@ export function InboxPage() {
           <label className="conversation-search">
             <span className="sr-only">Cari percakapan</span>
             <span aria-hidden="true">⌕</span>
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari nama atau nomor" />
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari nama, nomor, atau pesan" />
           </label>
           <div className="conversation-list-scroll">
             {listLoading && conversations.length === 0 ? <p className="inbox-state">Memuat percakapan…</p> : null}
-            {!listLoading && filteredConversations.length === 0 ? (
+            {searchLoading ? <p className="inbox-state">Mencari seluruh percakapan…</p> : null}
+            {searchError ? <p className="inbox-state" role="alert">{searchError}</p> : null}
+            {!listLoading && !searchLoading && !searchError && filteredConversations.length === 0 ? (
               <div className="inbox-state">
                 <strong>{search ? "Tidak ditemukan" : "Belum ada percakapan"}</strong>
                 <span>{search ? "Coba kata kunci lain." : "Pesan WhatsApp yang masuk akan muncul di sini."}</span>
@@ -163,6 +210,11 @@ export function InboxPage() {
                 </button>
               );
             })}
+            {!search.trim() && listPagination.has_more ? (
+              <button className="pagination-button" type="button" disabled={listMoreLoading} onClick={() => void loadMoreConversations()}>
+                {listMoreLoading ? "Memuat…" : "Muat percakapan sebelumnya"}
+              </button>
+            ) : null}
           </div>
         </aside>
 
@@ -186,7 +238,12 @@ export function InboxPage() {
                 </div>
               </header>
 
-              <div className="message-list" aria-live="polite">
+              <div className="message-list" aria-live="polite" ref={messageListRef}>
+                {detailPagination.has_more ? (
+                  <button className="pagination-button older-messages-button" type="button" disabled={detailMoreLoading} onClick={() => void handleLoadOlderMessages()}>
+                    {detailMoreLoading ? "Memuat…" : "Muat pesan sebelumnya"}
+                  </button>
+                ) : null}
                 {detailLoading && messages.length === 0 ? <p className="inbox-state">Memuat pesan…</p> : null}
                 {!detailLoading && messages.length === 0 ? <p className="inbox-state">Belum ada pesan pada percakapan ini.</p> : null}
                 {messages.map((message) => <MessageBubble key={message.id} message={message} />)}
@@ -194,6 +251,7 @@ export function InboxPage() {
 
               <div className="composer-area">
                 {sendError ? <p className="composer-error" role="alert">{sendError}</p> : null}
+                {sendWarning ? <p className="composer-warning" role="alert">{sendWarning}</p> : null}
                 {retryPayload ? (
                   <button className="retry-send-button" type="button" disabled={sending} onClick={() => void retryMessage()}>
                     Coba ulang permintaan yang sama
