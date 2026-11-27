@@ -27,21 +27,15 @@ Frontend WhatsApp Inbox berbasis **Vite + React + TypeScript** dengan Supabase d
    npm install
    ```
 
-3. Salin `.env.example` menjadi `.env`.
-4. Isi konfigurasi frontend:
-
-   ```env
-   VITE_SUPABASE_URL=https://your-project-ref.supabase.co
-   VITE_SUPABASE_ANON_KEY=your-publishable-or-anon-key
-   ```
-
-   Gunakan URL dan publishable/anon key dari Supabase Dashboard. Key ini memang digunakan oleh browser; jangan pernah memasukkan service role key atau `WHATSAPP_ACCESS_TOKEN` ke environment frontend.
-
-5. Jalankan aplikasi:
+3. Jalankan aplikasi:
 
    ```bash
    npm run dev
    ```
+
+Konfigurasi URL project dan Supabase publishable key sudah ditetapkan langsung pada `src/lib/supabase/client.ts`. Tidak diperlukan file `.env` atau environment variable untuk konfigurasi Supabase.
+
+Publishable key memang dirancang untuk digunakan di browser. Jangan pernah memasukkan Supabase `service_role` key, secret API key, atau `WHATSAPP_ACCESS_TOKEN` ke frontend.
 
 ## Validation
 
