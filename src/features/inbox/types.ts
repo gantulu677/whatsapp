@@ -68,7 +68,7 @@ export interface InteractiveButtonSelection {
 }
 
 export interface InboxMessage extends InboxMessageSummary {
-  interactive?: InteractiveReplyButtons | InteractiveButtonSelection | Record<string, unknown> | null;
+  interactive?: InteractiveReplyButtons | InteractiveButtonSelection | null;
   status_updated_at: string | null;
   context_message_id: string | null;
   error: { code: string | null; message: string | null } | null;
