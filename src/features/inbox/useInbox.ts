@@ -8,7 +8,7 @@ import type {
   InboxMessage,
   InboxPagination,
   SendMessagePayload,
-  InteractiveReplyButtons,
+  InteractiveMessage,
 } from "./types";
 
 const PAGE_SIZE = 50;
@@ -346,7 +346,7 @@ export function useInbox() {
     return sendPayload(payload);
   }, [account, selectedContact, retryPayload, sendPayload]);
 
-  const sendInteractiveMessage = useCallback((interactive: InteractiveReplyButtons) => {
+  const sendInteractiveMessage = useCallback((interactive: Exclude<InteractiveMessage, { type: "button_reply" }>) => {
     if (!account || !selectedContact) return Promise.resolve(false);
     return sendPayload({
       phone_number_id: account.phone_number_id,
