@@ -95,6 +95,7 @@ export function InboxPage() {
   const [buttonTitles, setButtonTitles] = useState(["", ""]);
   const messageListRef = useRef<HTMLDivElement | null>(null);
   const pendingScrollRestoreRef = useRef<{ height: number; top: number } | null>(null);
+  const previousSelectedContactRef = useRef(selectedContactId);
 
   useEffect(() => {
     const normalized = search.trim();
@@ -110,12 +111,17 @@ export function InboxPage() {
   }, [search, searchRevision, loadAllConversations, cancelConversationSearch]);
 
   useLayoutEffect(() => {
+    if (previousSelectedContactRef.current !== selectedContactId) {
+      previousSelectedContactRef.current = selectedContactId;
+      pendingScrollRestoreRef.current = null;
+      return;
+    }
     const pending = pendingScrollRestoreRef.current;
     const element = messageListRef.current;
     if (!pending || !element) return;
     element.scrollTop = pending.top + (element.scrollHeight - pending.height);
     pendingScrollRestoreRef.current = null;
-  }, [messages]);
+  }, [messages, selectedContactId]);
 
   async function handleLoadOlderMessages() {
     const element = messageListRef.current;
