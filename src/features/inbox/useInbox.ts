@@ -59,6 +59,13 @@ export function useInbox() {
   }, [selectedContactId]);
 
   const selectConversation = useCallback(async (contactId: string) => {
+    if (!contactId) {
+      setSelectedContactId(null);
+      setSelectedContact(null);
+      setMessages([]);
+      setDetailLoading(false);
+      return;
+    }
     setSelectedContactId(contactId);
     setSelectedContact(null);
     setMessages([]);
