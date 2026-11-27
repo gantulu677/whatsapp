@@ -171,7 +171,7 @@ export function useInbox() {
 
   const refreshDetail = useCallback(async () => {
     const contactId = selectedContactRef.current;
-    if (!contactId) return;
+    if (!contactId || detailMoreLoadingRef.current) return;
     const requestId = ++detailRequestRef.current;
     setDetailLoading(true);
     try {
@@ -213,8 +213,10 @@ export function useInbox() {
       }
       return false;
     } finally {
-      detailMoreLoadingRef.current = false;
-      setDetailMoreLoading(false);
+      if (requestId === detailRequestRef.current && selectedContactRef.current === contactId) {
+        detailMoreLoadingRef.current = false;
+        setDetailMoreLoading(false);
+      }
     }
   }, [updateDetailPagination]);
 
