@@ -87,8 +87,9 @@ export function useInbox() {
   }, [refreshList]);
 
   useEffect(() => {
-    if (!supabaseClient) return;
-    const channel = supabaseClient
+    const client = supabaseClient;
+    if (!client) return;
+    const channel = client
       .channel("whatsapp-inbox")
       .on("broadcast", { event: "inbox_update" }, () => {
         void refreshList();
@@ -97,7 +98,7 @@ export function useInbox() {
       .subscribe((status) => setRealtimeStatus(status));
 
     return () => {
-      void supabaseClient.removeChannel(channel);
+      void client.removeChannel(channel);
     };
   }, [refreshList, refreshDetail]);
 
