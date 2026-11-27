@@ -46,8 +46,8 @@
     {
       "id": "LiveChatPage",
       "type": "shared",
-      "title": "Live Chat",
-      "description": "Halaman percakapan langsung yang dapat digunakan pada beberapa route."
+      "title": "WhatsApp Inbox",
+      "description": "Daftar percakapan dan detail pesan WhatsApp."
     },
     {
       "id": "NotificationPage",
@@ -193,29 +193,9 @@
         "label": "Home"
       },
       {
-        "id": "products",
-        "routeId": "products",
-        "label": "Products"
-      },
-      {
-        "id": "live-chat",
+        "id": "inbox",
         "routeId": "livechat-main",
-        "label": "Live Chat"
-      },
-      {
-        "id": "notifications",
-        "routeId": "notification-main",
-        "label": "Notifications"
-      },
-      {
-        "id": "cart",
-        "routeId": "cart-main",
-        "label": "Cart"
-      },
-      {
-        "id": "profile",
-        "routeId": "profile",
-        "label": "Profile"
+        "label": "Inbox"
       }
     ]
   },
