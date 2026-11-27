@@ -55,9 +55,11 @@ export function useInbox() {
 
   const loadMoreConversations = useCallback(async () => {
     if (!listPagination.has_more || !listPagination.next_cursor || listMoreLoading) return;
+    const requestId = listRequestRef.current;
     setListMoreLoading(true);
     try {
       const response = await getInboxList(PAGE_SIZE, listPagination.next_cursor);
+      if (requestId !== listRequestRef.current) return;
       setConversations((current) => {
         const existing = new Set(current.map((item) => item.contact.id));
         return [...current, ...response.conversations.filter((item) => !existing.has(item.contact.id))];
@@ -107,7 +109,7 @@ export function useInbox() {
         setError(cause instanceof Error ? cause.message : "Tidak dapat memuat riwayat pesan sebelumnya.");
       }
     } finally {
-      if (requestId === detailRequestRef.current && selectedContactRef.current === contactId) setDetailMoreLoading(false);
+      if (selectedContactRef.current === contactId) setDetailMoreLoading(false);
     }
   }, [detailPagination, detailMoreLoading]);
 
