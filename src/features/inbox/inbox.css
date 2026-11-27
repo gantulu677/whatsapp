@@ -133,3 +133,16 @@
  .carousel-message-card{flex-basis:min(76vw,240px)}
 }
 @media(prefers-reduced-motion:reduce){.inbox-page *,.inbox-page *::before,.inbox-page *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+.inbox-skeleton-list{display:flex;flex-direction:column;gap:0;padding:4px 16px}
+.inbox-skeleton-item{display:flex;min-height:76px;align-items:center;gap:12px;border-bottom:1px solid #F2F4F7}
+.inbox-skeleton-item>span{width:48px;height:48px;flex:0 0 48px;border-radius:9999px;background:#E5E7EB;animation:wa-skeleton 1.4s ease-in-out infinite}
+.inbox-skeleton-item>div{display:flex;flex:1;flex-direction:column;gap:9px}
+.inbox-skeleton-item i{display:block;height:10px;border-radius:9999px;background:#E5E7EB;animation:wa-skeleton 1.4s ease-in-out infinite}
+.inbox-skeleton-item i:first-child{width:52%}
+.inbox-skeleton-item i:last-child{width:78%}
+.inbox-message-skeleton{display:flex;flex:1;flex-direction:column;justify-content:flex-end;gap:14px;padding:20px}
+.inbox-message-skeleton span{display:block;width:62%;height:52px;border-radius:14px;background:rgba(255,255,255,.75);animation:wa-skeleton 1.4s ease-in-out infinite}
+.inbox-message-skeleton span:nth-child(2){width:72%;align-self:flex-end;background:rgba(217,253,211,.9)}
+.inbox-message-skeleton span:nth-child(3){width:48%}
+@keyframes wa-skeleton{0%,100%{opacity:.55}50%{opacity:1}}
