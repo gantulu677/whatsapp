@@ -204,7 +204,7 @@ export function InboxPage() {
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari nama, nomor, atau pesan" />
           </label>
           <div className="conversation-list-scroll">
-            {listLoading && conversations.length === 0 ? <p className="inbox-state">Memuat percakapan…</p> : null}
+            {listLoading && conversations.length === 0 ? <div className="inbox-skeleton-list" aria-label="Memuat percakapan" aria-busy="true">{Array.from({ length: 5 }, (_, index) => <div className="conversation-skeleton" key={index}><span /><div><i /><i /></div></div>)}</div> : null}
             {searchLoading ? <p className="inbox-state">Mencari seluruh percakapan…</p> : null}
             {searchError ? <p className="inbox-state" role="alert">{searchError}</p> : null}
             {!listLoading && !searchLoading && !searchError && filteredConversations.length === 0 ? (
@@ -268,7 +268,7 @@ export function InboxPage() {
                     {detailMoreLoading ? "Memuat…" : "Muat pesan sebelumnya"}
                   </button>
                 ) : null}
-                {detailLoading && messages.length === 0 ? <p className="inbox-state">Memuat pesan…</p> : null}
+                {detailLoading && messages.length === 0 ? <div className="message-skeleton-list" aria-label="Memuat pesan" aria-busy="true"><span /><span /><span /></div> : null}
                 {!detailLoading && messages.length === 0 ? <p className="inbox-state">Belum ada pesan pada percakapan ini.</p> : null}
                 {messages.map((message) => <MessageBubble key={message.id} message={message} />)}
               </div>
