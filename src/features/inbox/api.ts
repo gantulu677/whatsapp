@@ -7,9 +7,14 @@ import type {
 } from "./types";
 
 export class InboxApiError extends Error {
-  constructor(message: string, public readonly retryable = false, public readonly code?: string) {
+  readonly retryable: boolean;
+  readonly code?: string;
+
+  constructor(message: string, retryable = false, code?: string) {
     super(message);
     this.name = "InboxApiError";
+    this.retryable = retryable;
+    this.code = code;
   }
 }
 
