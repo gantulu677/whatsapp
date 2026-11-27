@@ -7,6 +7,7 @@ import type {
   InboxConversation,
   InboxMessage,
   SendMessagePayload,
+  InteractiveReplyButtons,
 } from "./types";
 
 export function useInbox() {
@@ -102,17 +103,8 @@ export function useInbox() {
     };
   }, [refreshList, refreshDetail]);
 
-  const sendMessage = useCallback(async (message: string) => {
-    if (!account || !selectedContact || !message.trim()) return false;
-    const payload = retryPayload && retryPayload.to === selectedContact.wa_id && retryPayload.message === message.trim()
-      ? retryPayload
-      : {
-          phone_number_id: account.phone_number_id,
-          to: selectedContact.wa_id,
-          message: message.trim(),
-          client_request_id: crypto.randomUUID(),
-        };
-
+  const sendPayload = useCallback(async (payload: SendMessagePayload) => {
+    if (!account || !selectedContact) return false;
     setSending(true);
     setSendError(null);
     try {
@@ -123,12 +115,41 @@ export function useInbox() {
     } catch (cause) {
       const apiError = cause instanceof InboxApiError ? cause : new InboxApiError("Pengiriman pesan gagal.");
       setSendError(apiError.message);
-      if (apiError.retryable) setRetryPayload(payload);
+      if (apiError.retryable || apiError.code === "DELIVERY_UNKNOWN") setRetryPayload(payload);
       return false;
     } finally {
       setSending(false);
     }
-  }, [account, selectedContact, retryPayload, refreshList, refreshDetail]);
+  }, [account, selectedContact, refreshList, refreshDetail]);
+
+  const sendMessage = useCallback((message: string) => {
+    if (!account || !selectedContact || !message.trim()) return Promise.resolve(false);
+    const payload: SendMessagePayload = retryPayload && retryPayload.to === selectedContact.wa_id &&
+      retryPayload.message === message.trim() && !retryPayload.interactive
+      ? retryPayload
+      : {
+          phone_number_id: account.phone_number_id,
+          to: selectedContact.wa_id,
+          message: message.trim(),
+          client_request_id: crypto.randomUUID(),
+        };
+    return sendPayload(payload);
+  }, [account, selectedContact, retryPayload, sendPayload]);
+
+  const sendInteractiveMessage = useCallback((interactive: InteractiveReplyButtons) => {
+    if (!account || !selectedContact) return Promise.resolve(false);
+    const payload: SendMessagePayload = {
+      phone_number_id: account.phone_number_id,
+      to: selectedContact.wa_id,
+      interactive,
+      client_request_id: crypto.randomUUID(),
+    };
+    return sendPayload(payload);
+  }, [account, selectedContact, sendPayload]);
+
+  const retryMessage = useCallback(() => {
+    return retryPayload ? sendPayload(retryPayload) : Promise.resolve(false);
+  }, [retryPayload, sendPayload]);
 
   return {
     account,
@@ -146,6 +167,8 @@ export function useInbox() {
     refreshList,
     selectConversation,
     sendMessage,
+    sendInteractiveMessage,
+    retryMessage,
     clearSendError: () => setSendError(null),
   };
 }

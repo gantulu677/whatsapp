@@ -49,7 +49,26 @@ export interface InboxMedia {
   url?: string;
 }
 
+export interface InteractiveReplyButton {
+  type: "reply";
+  reply: { id: string; title: string };
+}
+
+export interface InteractiveReplyButtons {
+  type: "button";
+  header?: { type: "text"; text: string };
+  body: { text: string };
+  footer?: { text: string };
+  action: { buttons: InteractiveReplyButton[] };
+}
+
+export interface InteractiveButtonSelection {
+  type: "button_reply";
+  button_reply: { id: string | null; title: string | null };
+}
+
 export interface InboxMessage extends InboxMessageSummary {
+  interactive?: InteractiveReplyButtons | InteractiveButtonSelection | null;
   status_updated_at: string | null;
   context_message_id: string | null;
   error: { code: string | null; message: string | null } | null;
@@ -90,6 +109,7 @@ export interface SendMessageResponse {
 export interface SendMessagePayload {
   phone_number_id: string;
   to: string;
-  message: string;
+  message?: string;
+  interactive?: InteractiveReplyButtons;
   client_request_id: string;
 }

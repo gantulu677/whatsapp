@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useInbox } from "./useInbox";
-import type { InboxMessage } from "./types";
+import type { InboxMessage, InteractiveReplyButtons } from "./types";
 import "./inbox.css";
 
 function formatTime(value: string) {
@@ -46,6 +46,16 @@ function MessageBubble({ message }: { message: InboxMessage }) {
             )}
           </div>
         ))}
+        {message.interactive && "action" in message.interactive && Array.isArray(message.interactive.action.buttons) ? (
+          <div className="interactive-message-options" aria-label="Pilihan balasan">
+            {message.interactive.action.buttons.map((item, index) => (
+              <span key={item.reply?.id ?? index}>{item.reply?.title ?? "Pilihan"}</span>
+            ))}
+          </div>
+        ) : null}
+        {message.interactive && "button_reply" in message.interactive ? (
+          <p className="interactive-reply-label">Balasan tombol: {message.interactive.button_reply.title ?? message.message_content}</p>
+        ) : null}
         {message.error?.message ? <p className="message-error">{message.error.message}</p> : null}
         <footer className="message-meta">
           <time dateTime={message.timestamp}>{formatTime(message.timestamp)}</time>
@@ -60,10 +70,15 @@ export function InboxPage() {
   const {
     account, conversations, selectedContactId, selectedContact, messages, listLoading,
     detailLoading, sending, error, sendError, retryPayload, realtimeStatus, refreshList,
-    selectConversation, sendMessage,
+    selectConversation, sendMessage, sendInteractiveMessage, retryMessage,
   } = useInbox();
   const [search, setSearch] = useState("");
   const [draft, setDraft] = useState("");
+  const [composerMode, setComposerMode] = useState<"text" | "buttons">("text");
+  const [buttonBody, setButtonBody] = useState("");
+  const [buttonHeader, setButtonHeader] = useState("");
+  const [buttonFooter, setButtonFooter] = useState("");
+  const [buttonTitles, setButtonTitles] = useState(["", ""]);
 
   const filteredConversations = useMemo(() => {
     const normalized = search.trim().toLowerCase();
@@ -180,24 +195,56 @@ export function InboxPage() {
               <div className="composer-area">
                 {sendError ? <p className="composer-error" role="alert">{sendError}</p> : null}
                 {retryPayload ? (
-                  <button className="retry-send-button" type="button" disabled={sending} onClick={() => void sendMessage(retryPayload.message)}>
+                  <button className="retry-send-button" type="button" disabled={sending} onClick={() => void retryMessage()}>
                     Coba ulang permintaan yang sama
                   </button>
                 ) : null}
-                <form className="message-composer" onSubmit={(event) => void handleSubmit(event)}>
-                  <textarea
-                    value={draft}
-                    onChange={(event) => setDraft(event.target.value)}
-                    placeholder="Ketik pesan…"
-                    rows={1}
-                    maxLength={4096}
-                    aria-label="Tulis pesan WhatsApp"
-                  />
-                  <button type="submit" disabled={!draft.trim() || sending || !account || !contact}>
-                    {sending ? "Mengirim…" : "Kirim"}
-                  </button>
-                </form>
-                <p className="composer-hint">Pesan teks mengikuti batas waktu layanan 24 jam yang divalidasi server.</p>
+                <div className="composer-mode-switch" role="group" aria-label="Jenis pesan">
+                  <button type="button" className={composerMode === "text" ? "active" : ""} onClick={() => setComposerMode("text")}>Pesan teks</button>
+                  <button type="button" className={composerMode === "buttons" ? "active" : ""} onClick={() => setComposerMode("buttons")}>Tombol balasan</button>
+                </div>
+                {composerMode === "text" ? (
+                  <form className="message-composer" onSubmit={(event) => void handleSubmit(event)}>
+                    <textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Ketik pesan…" rows={1} maxLength={4096} aria-label="Tulis pesan WhatsApp" />
+                    <button type="submit" disabled={!draft.trim() || sending || !account || !contact}>{sending ? "Mengirim…" : "Kirim"}</button>
+                  </form>
+                ) : (
+                  <form className="interactive-composer" onSubmit={async (event) => {
+                    event.preventDefault();
+                    const titles = buttonTitles.map((title) => title.trim()).filter(Boolean);
+                    if (!buttonBody.trim() || titles.length < 1 || new Set(titles.map((title) => title.toLocaleLowerCase())).size !== titles.length) return;
+                    const interactive: InteractiveReplyButtons = {
+                      type: "button",
+                      ...(buttonHeader.trim() ? { header: { type: "text", text: buttonHeader.trim() } } : {}),
+                      body: { text: buttonBody.trim() },
+                      ...(buttonFooter.trim() ? { footer: { text: buttonFooter.trim() } } : {}),
+                      action: { buttons: titles.map((title) => ({ type: "reply", reply: { id: `reply_${crypto.randomUUID()}`, title } })) },
+                    };
+                    const sent = await sendInteractiveMessage(interactive);
+                    if (sent) {
+                      setButtonBody("");
+                      setButtonHeader("");
+                      setButtonFooter("");
+                      setButtonTitles(["", ""]);
+                      setComposerMode("text");
+                    }
+                  }}>
+                    <input value={buttonHeader} onChange={(event) => setButtonHeader(event.target.value)} maxLength={60} placeholder="Header teks (opsional, maks. 60)" aria-label="Header pesan" />
+                    <textarea value={buttonBody} onChange={(event) => setButtonBody(event.target.value)} maxLength={1024} rows={2} placeholder="Isi pesan (wajib, maks. 1.024 karakter)" aria-label="Isi pesan tombol balasan" />
+                    <div className="reply-button-fields">
+                      {buttonTitles.map((title, index) => (
+                        <div className="reply-button-field" key={index}>
+                          <input value={title} onChange={(event) => setButtonTitles((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} maxLength={20} placeholder={`Judul tombol ${index + 1} (maks. 20)`} aria-label={`Judul tombol ${index + 1}`} />
+                          {buttonTitles.length > 1 ? <button type="button" aria-label={`Hapus tombol ${index + 1}`} onClick={() => setButtonTitles((current) => current.filter((_, itemIndex) => itemIndex !== index))}>×</button> : null}
+                        </div>
+                      ))}
+                    </div>
+                    {buttonTitles.length < 3 ? <button className="add-reply-button" type="button" onClick={() => setButtonTitles((current) => [...current, ""])}>+ Tambah tombol</button> : null}
+                    <input value={buttonFooter} onChange={(event) => setButtonFooter(event.target.value)} maxLength={60} placeholder="Footer (opsional, maks. 60)" aria-label="Footer pesan" />
+                    <button className="interactive-send-button" type="submit" disabled={!buttonBody.trim() || !buttonTitles.some((title) => title.trim()) || new Set(buttonTitles.filter((title) => title.trim()).map((title) => title.trim().toLocaleLowerCase())).size !== buttonTitles.filter((title) => title.trim()).length || sending || !account || !contact}>{sending ? "Mengirim…" : "Kirim tombol balasan"}</button>
+                  </form>
+                )}
+                <p className="composer-hint">Pesan interaktif mengikuti batas layanan 24 jam yang divalidasi server.</p>
               </div>
             </>
           )}
