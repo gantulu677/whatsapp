@@ -71,6 +71,8 @@ export function useInbox() {
   const detailLoadedOlderRef = useRef(false);
   const listMoreLoadingRef = useRef(false);
   const detailMoreLoadingRef = useRef(false);
+  const detailLoadingRef = useRef(false);
+  const detailRefreshPendingRef = useRef(false);
 
   const updateListPagination = useCallback((pagination: InboxPagination) => {
     listPaginationRef.current = pagination;
@@ -171,8 +173,13 @@ export function useInbox() {
 
   const refreshDetail = useCallback(async () => {
     const contactId = selectedContactRef.current;
-    if (!contactId || detailMoreLoadingRef.current) return;
+    if (!contactId) return;
+    if (detailMoreLoadingRef.current) {
+      detailRefreshPendingRef.current = true;
+      return;
+    }
     const requestId = ++detailRequestRef.current;
+    detailLoadingRef.current = true;
     setDetailLoading(true);
     try {
       const response = await getInboxDetail(contactId, PAGE_SIZE);
@@ -189,14 +196,17 @@ export function useInbox() {
         setError(cause instanceof Error ? cause.message : "Tidak dapat memuat detail percakapan.");
       }
     } finally {
-      if (requestId === detailRequestRef.current && selectedContactRef.current === contactId) setDetailLoading(false);
+      if (requestId === detailRequestRef.current && selectedContactRef.current === contactId) {
+        detailLoadingRef.current = false;
+        setDetailLoading(false);
+      }
     }
   }, [updateDetailPagination]);
 
   const loadOlderMessages = useCallback(async () => {
     const contactId = selectedContactRef.current;
     const pagination = detailPaginationRef.current;
-    if (!contactId || !pagination.has_more || !pagination.next_cursor || detailMoreLoadingRef.current) return false;
+    if (!contactId || !pagination.has_more || !pagination.next_cursor || detailMoreLoadingRef.current || detailLoadingRef.current) return false;
     const requestId = detailRequestRef.current;
     detailMoreLoadingRef.current = true;
     setDetailMoreLoading(true);
@@ -216,9 +226,13 @@ export function useInbox() {
       if (requestId === detailRequestRef.current && selectedContactRef.current === contactId) {
         detailMoreLoadingRef.current = false;
         setDetailMoreLoading(false);
+        if (detailRefreshPendingRef.current) {
+          detailRefreshPendingRef.current = false;
+          void refreshDetail();
+        }
       }
     }
-  }, [updateDetailPagination]);
+  }, [updateDetailPagination, refreshDetail]);
 
   const selectConversation = useCallback(async (contactId: string) => {
     selectedContactRef.current = contactId || null;
@@ -228,11 +242,13 @@ export function useInbox() {
     setSendError(null);
     setSendWarning(null);
     detailLoadedOlderRef.current = false;
+    detailRefreshPendingRef.current = false;
     updateDetailPagination(EMPTY_PAGINATION);
     if (!contactId) {
       setSelectedContact(null);
       setMessages([]);
       setDetailLoading(false);
+      detailLoadingRef.current = false;
       detailMoreLoadingRef.current = false;
       setDetailMoreLoading(false);
       return;
@@ -241,6 +257,7 @@ export function useInbox() {
     setSelectedContact(null);
     setMessages([]);
     setDetailLoading(true);
+    detailLoadingRef.current = true;
     detailMoreLoadingRef.current = false;
     setDetailMoreLoading(false);
     try {
@@ -255,7 +272,10 @@ export function useInbox() {
         setError(cause instanceof Error ? cause.message : "Tidak dapat memuat detail percakapan.");
       }
     } finally {
-      if (requestId === detailRequestRef.current && selectedContactRef.current === contactId) setDetailLoading(false);
+      if (requestId === detailRequestRef.current && selectedContactRef.current === contactId) {
+        detailLoadingRef.current = false;
+        setDetailLoading(false);
+      }
     }
   }, [updateDetailPagination]);
 
