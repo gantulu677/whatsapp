@@ -1,8 +1,12 @@
 name: Validate application
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
+      - main
       - feature/bootstrap-vite-react-typescript
   workflow_dispatch:
 
