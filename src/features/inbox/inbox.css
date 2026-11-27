@@ -265,3 +265,20 @@ button:disabled{cursor:not-allowed}
  .carousel-message-card{flex-basis:240px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* Loading, attachment, and mobile transition states */
+.inbox-skeleton-list{display:grid;gap:0;padding:4px 0}
+.conversation-skeleton{display:flex;height:76px;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #F2F4F7}
+.conversation-skeleton>span{width:48px;height:48px;flex:0 0 48px;border-radius:50%;background:#E5E7EB;animation:wa-skeleton 1.4s ease-in-out infinite}
+.conversation-skeleton>div{display:grid;flex:1;gap:9px}
+.conversation-skeleton i{display:block;height:10px;border-radius:6px;background:#E5E7EB;animation:wa-skeleton 1.4s ease-in-out infinite}
+.conversation-skeleton i:first-child{width:54%}
+.conversation-skeleton i:last-child{width:78%;height:8px;animation-delay:.12s}
+.message-skeleton-list{display:flex;flex:1;flex-direction:column;justify-content:flex-end;gap:14px;padding:20px}
+.message-skeleton-list span{display:block;width:min(62%,320px);height:48px;border-radius:14px;background:rgba(255,255,255,.75);animation:wa-skeleton 1.4s ease-in-out infinite}
+.message-skeleton-list span:nth-child(2){align-self:flex-end;width:min(55%,280px);background:rgba(217,253,211,.9);animation-delay:.12s}
+.message-skeleton-list span:nth-child(3){width:min(48%,240px);animation-delay:.24s}
+.message-media:has(a:not(:has(img))){padding:12px;border-radius:10px;background:var(--wa-surface-2)}
+@keyframes wa-skeleton{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes wa-slide-in{from{opacity:.7;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+@media(max-width:767px){.inbox-layout.is-detail-open .inbox-detail-panel{animation:wa-slide-in .25s ease-in-out both}}
