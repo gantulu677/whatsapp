@@ -20,14 +20,10 @@ async function functionRequest<T>(functionName: string, query: URLSearchParams, 
 
   let response: Response;
   try {
-    response = await fetch(endpoint, {
-      ...init,
-      headers: {
-        apikey: anonKey,
-        Authorization: `Bearer ${anonKey}`,
-        ...(init?.headers ?? {}),
-      },
-    });
+    const headers = new Headers(init?.headers);
+    headers.set("apikey", anonKey);
+    headers.set("Authorization", `Bearer ${anonKey}`);
+    response = await fetch(endpoint, { ...init, headers });
   } catch {
     throw new InboxApiError("Koneksi ke server gagal. Periksa jaringan lalu coba lagi.", true, "NETWORK_ERROR");
   }
