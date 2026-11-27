@@ -62,13 +62,46 @@ export interface InteractiveReplyButtons {
   action: { buttons: InteractiveReplyButton[] };
 }
 
+export interface InteractiveCarouselQuickReplyCard {
+  card_index: number;
+  type: "button";
+  header:
+    | { type: "image"; image: { link: string } }
+    | { type: "video"; video: { link: string } };
+  body?: { text: string };
+  action: {
+    buttons: Array<{ type: "quick_reply"; quick_reply: { id: string; title: string } }>;
+  };
+}
+
+export interface InteractiveCarouselUrlCard {
+  card_index: number;
+  type: "cta_url";
+  header:
+    | { type: "image"; image: { link: string } }
+    | { type: "video"; video: { link: string } };
+  body?: { text: string };
+  action: {
+    name: "cta_url";
+    parameters: { display_text: string; url: string };
+  };
+}
+
+export interface InteractiveCarouselMessage {
+  type: "carousel";
+  body: { text: string };
+  action: { cards: Array<InteractiveCarouselQuickReplyCard | InteractiveCarouselUrlCard> };
+}
+
 export interface InteractiveButtonSelection {
   type: "button_reply";
   button_reply: { id: string | null; title: string | null };
 }
 
+export type InteractiveMessage = InteractiveReplyButtons | InteractiveCarouselMessage | InteractiveButtonSelection;
+
 export interface InboxMessage extends InboxMessageSummary {
-  interactive?: InteractiveReplyButtons | InteractiveButtonSelection | null;
+  interactive?: InteractiveMessage | null;
   status_updated_at: string | null;
   context_message_id: string | null;
   error: { code: string | null; message: string | null } | null;
@@ -110,6 +143,6 @@ export interface SendMessagePayload {
   phone_number_id: string;
   to: string;
   message?: string;
-  interactive?: InteractiveReplyButtons;
+  interactive?: InteractiveReplyButtons | InteractiveCarouselMessage;
   client_request_id: string;
 }
