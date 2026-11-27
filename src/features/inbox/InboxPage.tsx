@@ -29,10 +29,18 @@ function statusLabel(status: string) {
 
 function MessageBubble({ message }: { message: InboxMessage }) {
   const outgoing = message.direction === "outbound";
+  const buttonReply = message.interactive && "button_reply" in message.interactive ? message.interactive.button_reply : null;
+  const outgoingButtons = message.interactive && "action" in message.interactive ? message.interactive : null;
   return (
     <article className={["message-row", outgoing ? "outgoing" : "incoming"].join(" ")}>
       <div className="message-bubble">
-        {message.message_content ? <p>{message.message_content}</p> : <p className="message-kind">{messagePreview(message)}</p>}
+        {buttonReply ? (
+          <p className="interactive-reply-label">Balasan tombol: {buttonReply.title ?? message.message_content ?? "Pilihan dipilih"}</p>
+        ) : message.message_content ? (
+          <p>{message.message_content}</p>
+        ) : (
+          <p className="message-kind">{messagePreview(message)}</p>
+        )}
         {message.media.map((media) => (
           <div className="message-media" key={media.id}>
             {media.url && media.mime_type?.startsWith("image/") ? (
@@ -46,15 +54,18 @@ function MessageBubble({ message }: { message: InboxMessage }) {
             )}
           </div>
         ))}
-        {message.interactive && "action" in message.interactive && Array.isArray(message.interactive.action.buttons) ? (
-          <div className="interactive-message-options" aria-label="Pilihan balasan">
-            {message.interactive.action.buttons.map((item, index) => (
-              <span key={item.reply?.id ?? index}>{item.reply?.title ?? "Pilihan"}</span>
-            ))}
-          </div>
-        ) : null}
-        {message.interactive && "button_reply" in message.interactive ? (
-          <p className="interactive-reply-label">Balasan tombol: {message.interactive.button_reply.title ?? message.message_content}</p>
+        {outgoingButtons ? (
+          <>
+            {outgoingButtons.header?.type === "text" ? <p className="interactive-message-header">{outgoingButtons.header.text}</p> : null}
+            {Array.isArray(outgoingButtons.action.buttons) ? (
+              <div className="interactive-message-options" aria-label="Pilihan balasan">
+                {outgoingButtons.action.buttons.map((item, index) => (
+                  <span key={item.reply?.id ?? index}>{item.reply?.title ?? "Pilihan"}</span>
+                ))}
+              </div>
+            ) : null}
+            {outgoingButtons.footer?.text ? <p className="interactive-message-footer">{outgoingButtons.footer.text}</p> : null}
+          </>
         ) : null}
         {message.error?.message ? <p className="message-error">{message.error.message}</p> : null}
         <footer className="message-meta">
@@ -69,8 +80,9 @@ function MessageBubble({ message }: { message: InboxMessage }) {
 export function InboxPage() {
   const {
     account, conversations, selectedContactId, selectedContact, messages, listLoading,
-    detailLoading, sending, error, sendError, retryPayload, realtimeStatus, refreshList,
-    selectConversation, sendMessage, sendInteractiveMessage, retryMessage,
+    detailLoading, detailMoreLoading, listMoreLoading, detailPagination, listPagination,
+    sending, error, sendError, retryPayload, realtimeStatus, refreshList, loadMoreConversations,
+    loadOlderMessages, selectConversation, sendMessage, sendInteractiveMessage, retryMessage,
   } = useInbox();
   const [search, setSearch] = useState("");
   const [draft, setDraft] = useState("");
@@ -163,6 +175,11 @@ export function InboxPage() {
                 </button>
               );
             })}
+            {!search && listPagination.has_more ? (
+              <button className="pagination-button" type="button" disabled={listMoreLoading} onClick={() => void loadMoreConversations()}>
+                {listMoreLoading ? "Memuat…" : "Muat percakapan sebelumnya"}
+              </button>
+            ) : null}
           </div>
         </aside>
 
@@ -187,6 +204,11 @@ export function InboxPage() {
               </header>
 
               <div className="message-list" aria-live="polite">
+                {detailPagination.has_more ? (
+                  <button className="pagination-button older-messages-button" type="button" disabled={detailMoreLoading} onClick={() => void loadOlderMessages()}>
+                    {detailMoreLoading ? "Memuat…" : "Muat pesan sebelumnya"}
+                  </button>
+                ) : null}
                 {detailLoading && messages.length === 0 ? <p className="inbox-state">Memuat pesan…</p> : null}
                 {!detailLoading && messages.length === 0 ? <p className="inbox-state">Belum ada pesan pada percakapan ini.</p> : null}
                 {messages.map((message) => <MessageBubble key={message.id} message={message} />)}
