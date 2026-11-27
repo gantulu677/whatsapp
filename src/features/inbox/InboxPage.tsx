@@ -103,9 +103,9 @@ export function InboxPage() {
   const [composerMode, setComposerMode] = useState<"text" | "buttons" | "carousel">("text");
   const [carouselBody, setCarouselBody] = useState("");
   const [carouselButtonMode, setCarouselButtonMode] = useState<"quick_reply" | "cta_url">("quick_reply");
-  const [carouselCards, setCarouselCards] = useState([
-    { mediaType: "image" as const, mediaUrl: "", body: "", buttonTitle: "", buttonUrl: "" },
-    { mediaType: "image" as const, mediaUrl: "", body: "", buttonTitle: "", buttonUrl: "" },
+  const [carouselCards, setCarouselCards] = useState<Array<{ mediaType: "image" | "video"; mediaUrl: string; body: string; buttonTitle: string; buttonUrl: string }>>([
+    { mediaType: "image", mediaUrl: "", body: "", buttonTitle: "", buttonUrl: "" },
+    { mediaType: "image", mediaUrl: "", body: "", buttonTitle: "", buttonUrl: "" },
   ]);
   const [buttonBody, setButtonBody] = useState("");
   const [buttonHeader, setButtonHeader] = useState("");
@@ -326,7 +326,7 @@ export function InboxPage() {
                 ) : (
                   <form className="interactive-composer carousel-composer" onSubmit={async (event) => {
                     event.preventDefault();
-                    const mediaType = carouselCards[0]?.mediaType;
+                    const mediaType = carouselCards[0]?.mediaType ?? "image";
                     const validCards = carouselCards.length >= 2 && carouselCards.length <= 10 &&
                       carouselCards.every((card) => card.mediaType === mediaType && /^https:\/\//i.test(card.mediaUrl.trim()) &&
                         card.buttonTitle.trim().length > 0 && (carouselButtonMode !== "cta_url" || /^https:\/\//i.test(card.buttonUrl.trim())) &&
