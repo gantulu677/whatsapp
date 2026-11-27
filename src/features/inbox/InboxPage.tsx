@@ -178,10 +178,10 @@ export function InboxPage() {
           <p className="inbox-account">{account ? account.name : "Memuat akun WhatsApp…"}</p>
         </div>
         <div className="inbox-toolbar-actions">
-          <span className={["realtime-indicator", realtimeStatus === "SUBSCRIBED" ? "connected" : ""].join(" ")}>
-            <span aria-hidden="true" />{realtimeStatus === "SUBSCRIBED" ? "Live" : "Menghubungkan"}
+          <span className={["realtime-indicator", realtimeStatus === "SUBSCRIBED" ? "connected" : ""].join(" ")} role="status" aria-live="polite">
+            <span aria-hidden="true" />{realtimeStatus === "SUBSCRIBED" ? "Connected" : "Menghubungkan"}
           </span>
-          <button className="icon-button" type="button" onClick={() => void refreshList()} aria-label="Muat ulang percakapan">↻</button>
+          <button className="icon-button" type="button" onClick={() => void refreshList()} aria-label="Muat ulang percakapan" title="Muat ulang"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M5.6 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.4-3"/></svg></button>
         </div>
       </div>
 
@@ -198,7 +198,7 @@ export function InboxPage() {
             <h2>Percakapan</h2>
             <span>{conversations.length}</span>
           </div>
-          <label className="conversation-search">
+          <label className="conversation-search" role="search">
             <span className="sr-only">Cari percakapan</span>
             <span aria-hidden="true">⌕</span>
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari nama, nomor, atau pesan" />
@@ -245,14 +245,14 @@ export function InboxPage() {
         <section className="inbox-detail-panel" aria-label="Detail percakapan">
           {!selectedContactId ? (
             <div className="inbox-detail-empty">
-              <span className="inbox-empty-icon" aria-hidden="true">☏</span>
+              <span className="inbox-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/></svg></span>
               <h2>Pilih percakapan</h2>
               <p>Pilih kontak di sebelah kiri untuk melihat riwayat pesan.</p>
             </div>
           ) : (
             <>
               <header className="conversation-detail-header">
-                <button className="mobile-back-button" type="button" onClick={() => selectConversation("")}>
+                <button className="mobile-back-button" type="button" aria-label="Kembali ke daftar percakapan" onClick={() => selectConversation("")}>
                   ← <span>Kembali</span>
                 </button>
                 <span className="contact-avatar detail-avatar" aria-hidden="true">{(contact?.profile_name ?? contact?.wa_id ?? "?").slice(0, 1).toUpperCase()}</span>
@@ -289,7 +289,7 @@ export function InboxPage() {
                 {composerMode === "text" ? (
                   <form className="message-composer" onSubmit={(event) => void handleSubmit(event)}>
                     <textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Ketik pesan…" rows={1} maxLength={4096} aria-label="Tulis pesan WhatsApp" />
-                    <button type="submit" disabled={!draft.trim() || sending || !account || !contact}>{sending ? "Mengirim…" : "Kirim"}</button>
+                    <button type="submit" aria-label="Kirim pesan" disabled={!draft.trim() || sending || !account || !contact}>{sending ? "Mengirim…" : <><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg></>}</button>
                   </form>
                 ) : composerMode === "buttons" ? (
                   <form className="interactive-composer" onSubmit={async (event) => {
