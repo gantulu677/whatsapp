@@ -1,0 +1,2 @@
+export function LoadingPage(){return <main className="system-page" role="status"><p className="eyebrow">WHATSAPP</p><h1>Memuat aplikasi…</h1></main>;}
+export function GlobalErrorPage(){return <main className="system-page" role="alert"><h1>Aplikasi mengalami gangguan</h1><p>Silakan muat ulang aplikasi.</p></main>;}

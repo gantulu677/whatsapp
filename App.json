@@ -1,0 +1,263 @@
+{
+  "schemaVersion": "2.1.0",
+  "application": {
+    "name": "WhatsApp",
+    "framework": "react",
+    "router": "react-router",
+    "routerMode": "data"
+  },
+  "pageRegistry": [
+    {
+      "id": "HomePage",
+      "type": "main",
+      "title": "Home",
+      "description": "Halaman utama aplikasi."
+    },
+    {
+      "id": "ProductsPage",
+      "type": "main",
+      "title": "Products",
+      "description": "Daftar produk."
+    },
+    {
+      "id": "ProfilePage",
+      "type": "main",
+      "title": "Profile",
+      "description": "Profil pengguna."
+    },
+    {
+      "id": "ProductDetailPage",
+      "type": "standalone",
+      "title": "Product Detail",
+      "description": "Detail produk."
+    },
+    {
+      "id": "CheckoutPage",
+      "type": "standalone",
+      "title": "Checkout",
+      "description": "Proses checkout."
+    },
+    {
+      "id": "PaymentResultPage",
+      "type": "standalone",
+      "title": "Payment Result",
+      "description": "Hasil pembayaran."
+    },
+    {
+      "id": "LiveChatPage",
+      "type": "shared",
+      "title": "WhatsApp Inbox",
+      "description": "Daftar percakapan dan detail pesan WhatsApp."
+    },
+    {
+      "id": "NotificationPage",
+      "type": "shared",
+      "title": "Notifications",
+      "description": "Halaman notifikasi yang dapat digunakan pada beberapa route."
+    },
+    {
+      "id": "CartPage",
+      "type": "shared",
+      "title": "Cart",
+      "description": "Halaman keranjang yang dapat digunakan pada beberapa route."
+    },
+    {
+      "id": "NotFoundPage",
+      "type": "standalone",
+      "title": "Not Found",
+      "description": "Halaman untuk route yang tidak ditemukan."
+    }
+  ],
+  "systemUIRegistry": [
+    {
+      "id": "LoadingPage",
+      "component": "LoadingPage"
+    },
+    {
+      "id": "RouteErrorPage",
+      "component": "RouteErrorPage"
+    },
+    {
+      "id": "GlobalErrorPage",
+      "component": "GlobalErrorPage"
+    }
+  ],
+  "layouts": [
+    {
+      "id": "AppShell",
+      "component": "AppShell",
+      "regions": {
+        "header": "Header",
+        "main": "Main",
+        "bottomNav": "BottomNav"
+      }
+    },
+    {
+      "id": "StandalonePages",
+      "component": "StandaloneLayout",
+      "regions": {
+        "header": "StandaloneHeader",
+        "content": "StandaloneContent",
+        "bottomAction": "StandaloneBottomAction"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "routeId": "home",
+      "pageId": "HomePage",
+      "layoutId": "AppShell",
+      "path": "/app"
+    },
+    {
+      "routeId": "products",
+      "pageId": "ProductsPage",
+      "layoutId": "AppShell",
+      "path": "/app/products"
+    },
+    {
+      "routeId": "livechat-main",
+      "pageId": "LiveChatPage",
+      "layoutId": "AppShell",
+      "path": "/app/live-chat"
+    },
+    {
+      "routeId": "notification-main",
+      "pageId": "NotificationPage",
+      "layoutId": "AppShell",
+      "path": "/app/notifications"
+    },
+    {
+      "routeId": "cart-main",
+      "pageId": "CartPage",
+      "layoutId": "AppShell",
+      "path": "/app/cart"
+    },
+    {
+      "routeId": "profile",
+      "pageId": "ProfilePage",
+      "layoutId": "AppShell",
+      "path": "/app/profile"
+    },
+    {
+      "routeId": "product-detail",
+      "pageId": "ProductDetailPage",
+      "layoutId": "StandalonePages",
+      "path": "/products/:productId"
+    },
+    {
+      "routeId": "notification-standalone",
+      "pageId": "NotificationPage",
+      "layoutId": "StandalonePages",
+      "path": "/notifications"
+    },
+    {
+      "routeId": "cart-standalone",
+      "pageId": "CartPage",
+      "layoutId": "StandalonePages",
+      "path": "/cart"
+    },
+    {
+      "routeId": "livechat-standalone",
+      "pageId": "LiveChatPage",
+      "layoutId": "StandalonePages",
+      "path": "/live-chat"
+    },
+    {
+      "routeId": "checkout",
+      "pageId": "CheckoutPage",
+      "layoutId": "StandalonePages",
+      "path": "/checkout"
+    },
+    {
+      "routeId": "payment-result",
+      "pageId": "PaymentResultPage",
+      "layoutId": "StandalonePages",
+      "path": "/payment/result"
+    },
+    {
+      "routeId": "not-found",
+      "pageId": "NotFoundPage",
+      "layoutId": "StandalonePages",
+      "path": "*"
+    }
+  ],
+  "navigation": {
+    "component": "BottomNavigation",
+    "id": "BottomNav",
+    "visible": true,
+    "items": [
+      {
+        "id": "home",
+        "routeId": "home",
+        "label": "Home"
+      },
+      {
+        "id": "inbox",
+        "routeId": "livechat-main",
+        "label": "Inbox"
+      }
+    ]
+  },
+  "overlays": {
+    "host": "OverlayHost",
+    "placement": "inside-router-outside-layouts",
+    "closeOnRouteChange": {
+      "Modal": true,
+      "Drawer": true,
+      "Dialog": true,
+      "Toast": false
+    },
+    "components": {
+      "modal": "ModalHost",
+      "drawer": "DrawerHost",
+      "dialog": "DialogHost",
+      "toast": "ToastHost"
+    }
+  },
+  "routeBehavior": {
+    "pendingNavigationHandler": "PendingNavigationHandler",
+    "loadingPage": "LoadingPage",
+    "errorBoundary": {
+      "router": "RouteErrorBoundary",
+      "pageRender": "PageRenderBoundary"
+    },
+    "standaloneBottomAction": {
+      "defaultVisible": true,
+      "visibilityPerRoute": {}
+    }
+  },
+  "validation": {
+    "pageType": {
+      "required": true,
+      "allowedValues": [
+        "main",
+        "standalone",
+        "shared"
+      ],
+      "singleValue": true,
+      "purpose": "metadata-only"
+    },
+    "references": {
+      "routePage": true,
+      "routeLayout": true,
+      "navigationRoute": true
+    },
+    "routes": {
+      "uniquePath": true,
+      "wildcardRequired": true,
+      "wildcardPath": "*",
+      "useReactRouterMatching": true
+    },
+    "systemUI": {
+      "componentRequired": true
+    },
+    "navigation": {
+      "visibleMustBeBoolean": true
+    },
+    "standaloneBottomAction": {
+      "visibleMustBeBoolean": true
+    }
+  },
+  "openDecisions": []
+}

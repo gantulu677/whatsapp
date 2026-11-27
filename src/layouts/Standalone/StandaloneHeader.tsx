@@ -1,0 +1,2 @@
+import { Link, useLocation } from "react-router-dom";
+export function StandaloneHeader(){const location=useLocation();return <header className="standalone-header"><Link to="/app" className="back-link">← Aplikasi</Link><span className="standalone-path">{location.pathname}</span></header>;}
