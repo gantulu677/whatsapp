@@ -17,7 +17,9 @@ const router = createBrowserRouter([{
   element: <ApplicationRoot />,
   errorElement: <GlobalErrorFallback />,
   children: buildRouteObjects(),
-}]);
+}], {
+  basename: import.meta.env.BASE_URL.replace(/\/$/, ""),
+});
 
 export default function App() {
   return <Suspense fallback={<LoadingFallback />}><RouterProvider router={router} /></Suspense>;
