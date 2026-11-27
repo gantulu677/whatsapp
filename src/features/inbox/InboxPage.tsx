@@ -181,7 +181,7 @@ export function InboxPage() {
           <span className={["realtime-indicator", realtimeStatus === "SUBSCRIBED" ? "connected" : ""].join(" ")}>
             <span aria-hidden="true" />{realtimeStatus === "SUBSCRIBED" ? "Live" : "Menghubungkan"}
           </span>
-          <button className="icon-button" type="button" onClick={() => void refreshList()} aria-label="Muat ulang percakapan">↻</button>
+          <button className="icon-button" type="button" onClick={() => void refreshList()} aria-label="Muat ulang percakapan" title="Muat ulang">↻</button>
         </div>
       </div>
 
@@ -204,7 +204,7 @@ export function InboxPage() {
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari nama, nomor, atau pesan" />
           </label>
           <div className="conversation-list-scroll">
-            {listLoading && conversations.length === 0 ? <p className="inbox-state">Memuat percakapan…</p> : null}
+            {listLoading && conversations.length === 0 ? <div className="inbox-skeleton-list" role="status" aria-label="Memuat percakapan">{[0,1,2,3].map((item) => <div className="inbox-skeleton-item" key={item}><span /><div><i /><i /></div></div>)}</div> : null}
             {searchLoading ? <p className="inbox-state">Mencari seluruh percakapan…</p> : null}
             {searchError ? <p className="inbox-state" role="alert">{searchError}</p> : null}
             {!listLoading && !searchLoading && !searchError && filteredConversations.length === 0 ? (
@@ -252,7 +252,7 @@ export function InboxPage() {
           ) : (
             <>
               <header className="conversation-detail-header">
-                <button className="mobile-back-button" type="button" onClick={() => selectConversation("")}>
+                <button className="mobile-back-button" type="button" onClick={() => selectConversation("")} aria-label="Kembali ke daftar percakapan">
                   ← <span>Kembali</span>
                 </button>
                 <span className="contact-avatar detail-avatar" aria-hidden="true">{(contact?.profile_name ?? contact?.wa_id ?? "?").slice(0, 1).toUpperCase()}</span>
@@ -262,13 +262,13 @@ export function InboxPage() {
                 </div>
               </header>
 
-              <div className="message-list" aria-live="polite" ref={messageListRef}>
+              <div className="message-list" aria-live="polite" aria-busy={detailLoading} ref={messageListRef}>
                 {detailPagination.has_more ? (
                   <button className="pagination-button older-messages-button" type="button" disabled={detailMoreLoading} onClick={() => void handleLoadOlderMessages()}>
                     {detailMoreLoading ? "Memuat…" : "Muat pesan sebelumnya"}
                   </button>
                 ) : null}
-                {detailLoading && messages.length === 0 ? <p className="inbox-state">Memuat pesan…</p> : null}
+                {detailLoading && messages.length === 0 ? <div className="inbox-message-skeleton" role="status" aria-label="Memuat pesan"><span /><span /><span /></div> : null}
                 {!detailLoading && messages.length === 0 ? <p className="inbox-state">Belum ada pesan pada percakapan ini.</p> : null}
                 {messages.map((message) => <MessageBubble key={message.id} message={message} />)}
               </div>
